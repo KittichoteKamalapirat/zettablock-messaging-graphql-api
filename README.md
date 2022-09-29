@@ -1,9 +1,9 @@
-To run the app, run the following code in one terminal to compile and watch TypeScript.
+To run the app, run the following command in one terminal (at root folder) to compile and watch TypeScript.
 ```
 yarn watch
 ```
 
-In another terminal, run
+In another terminal, run (at root folder)
 ```
 yarn dev
 ```

@@ -22,3 +22,10 @@ query Records ($message: String!){
   }
 }
 ```
+
+Variables
+```
+{
+  "message": "@bob @john (success) such a cool feature; https://twitter.com/jdorfman/status/430511497475670016, also here at https://www.zettablock.com/"
+}
+```

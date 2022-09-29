@@ -14,67 +14,38 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageResolver = void 0;
 const type_graphql_1 = require("type-graphql");
-let Link = class Link {
-};
-__decorate([
-    (0, type_graphql_1.Field)(() => String),
-    __metadata("design:type", String)
-], Link.prototype, "url", void 0);
-__decorate([
-    (0, type_graphql_1.Field)(() => String),
-    __metadata("design:type", String)
-], Link.prototype, "title", void 0);
-Link = __decorate([
-    (0, type_graphql_1.ObjectType)()
-], Link);
-let MessageOutput = class MessageOutput {
-};
-__decorate([
-    (0, type_graphql_1.Field)(() => [String]),
-    __metadata("design:type", Array)
-], MessageOutput.prototype, "mentions", void 0);
-__decorate([
-    (0, type_graphql_1.Field)(() => [String]),
-    __metadata("design:type", Array)
-], MessageOutput.prototype, "emoticons", void 0);
-__decorate([
-    (0, type_graphql_1.Field)(() => [Link]),
-    __metadata("design:type", Array)
-], MessageOutput.prototype, "links", void 0);
-MessageOutput = __decorate([
-    (0, type_graphql_1.ObjectType)()
-], MessageOutput);
+const MessageOutput_1 = require("../types/MessageOutput");
+const getEmoticons_1 = require("../utils/getEmoticons");
+const getMentions_1 = require("../utils/getMentions");
+const getUrls_1 = require("../utils/getUrls");
+const scrapeUrls_1 = require("../utils/scrapeUrls");
 let MessageResolver = class MessageResolver {
-    async formatMessage(input) {
-        const inputArray = input.split(" ");
-        const mentions = inputArray
-            .filter((word) => word[0] === "@")
-            .map((word) => word.slice(1, word.length));
-        const parenthesisRegEx = /\(([^)]+)\)/g;
-        const emoticons = [...input.match(parenthesisRegEx)].map((surrounded) => surrounded.slice(1, surrounded.length - 1));
-        const urlRegEx = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        const links = [...input.match(urlRegEx)];
-        console.log("links", links);
-        const output = {
-            mentions,
-            emoticons,
-            links: [
-                {
-                    url: "www",
-                    title: "titl",
-                },
-            ],
-        };
-        return output;
+    async records(message) {
+        try {
+            const mentions = (0, getMentions_1.getMentions)(message);
+            const emoticons = (0, getEmoticons_1.getEmoticons)(message);
+            const urls = (0, getUrls_1.getUrls)(message);
+            const links = await (0, scrapeUrls_1.scrapeUrls)(urls);
+            const output = {
+                mentions,
+                emoticons,
+                links,
+            };
+            return output;
+        }
+        catch (error) {
+            console.log(error);
+            throw new Error("Some data cannot be fetched");
+        }
     }
 };
 __decorate([
-    (0, type_graphql_1.Query)(() => MessageOutput),
-    __param(0, (0, type_graphql_1.Arg)("input", () => String)),
+    (0, type_graphql_1.Query)(() => MessageOutput_1.MessageOutput || undefined),
+    __param(0, (0, type_graphql_1.Arg)("message", () => String)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], MessageResolver.prototype, "formatMessage", null);
+], MessageResolver.prototype, "records", null);
 MessageResolver = __decorate([
     (0, type_graphql_1.Resolver)()
 ], MessageResolver);

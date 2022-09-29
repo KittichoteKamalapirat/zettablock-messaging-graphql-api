@@ -1,64 +1,31 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable class-methods-use-this */
-import { Arg, Field, ObjectType, Query, Resolver } from "type-graphql";
-
-@ObjectType()
-class Link {
-  @Field(() => String)
-  url: string;
-
-  @Field(() => String)
-  title: string;
-}
-
-@ObjectType()
-class MessageOutput {
-  @Field(() => [String])
-  mentions: string[];
-
-  @Field(() => [String])
-  emoticons: string[];
-
-  @Field(() => [Link])
-  links: Link[];
-}
+import { Arg, Query, Resolver } from "type-graphql";
+import { MessageOutput } from "../types/MessageOutput";
+import { getEmoticons } from "../utils/getEmoticons";
+import { getMentions } from "../utils/getMentions";
+import { getUrls } from "../utils/getUrls";
+import { scrapeUrls } from "../utils/scrapeUrls";
 
 @Resolver()
 export class MessageResolver {
-  @Query(() => MessageOutput)
-  async formatMessage(
-    @Arg("input", () => String) input: string
-  ): Promise<MessageOutput> {
-    const inputArray = input.split(" ");
-    const mentions = inputArray
-      .filter((word) => word[0] === "@")
-      .map((word) => word.slice(1, word.length));
+  @Query(() => MessageOutput || undefined)
+  async records(
+    @Arg("message", () => String) message: string
+  ): Promise<MessageOutput | Error> {
+    try {
+      const mentions = getMentions(message);
+      const emoticons = getEmoticons(message);
+      const urls = getUrls(message);
+      const links = await scrapeUrls(urls);
 
-    const parenthesisRegEx = /\(([^)]+)\)/g;
-    // const regEx2 = /(?<=\[)(.*?)(?=\])/g;
-    // const regEx3 = /\((.*?)\)/g;
-
-    const emoticons = [...input.match(parenthesisRegEx)].map((surrounded) =>
-      surrounded.slice(1, surrounded.length - 1)
-    );
-
-    // match url, no need http protocal
-    const urlRegEx =
-      /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-
-    const links = [...input.match(urlRegEx)];
-
-    console.log("links", links);
-    const output = {
-      mentions,
-      emoticons,
-      links: [
-        {
-          url: "www",
-          title: "titl",
-        },
-      ],
-    };
-    return output;
+      const output = {
+        mentions,
+        emoticons,
+        links,
+      };
+      return output;
+    } catch (error) {
+      console.log(error);
+      throw new Error("Some data cannot be fetched");
+    }
   }
 }
